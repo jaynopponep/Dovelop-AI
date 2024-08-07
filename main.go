@@ -5,19 +5,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/alexeyco/simpletable"
+	"io"
 	"log"
 	"os"
 	"strings"
-)
-
-var (
-	sampleData = [][]interface{}{
-		{1, "Finish FAFSA Application"},
-		{2, "Reply to [person]'s email"},
-		{3, "Review code written by [person]"},
-		{4, "Close issue #420"},
-		{5, "Walk Dog"},
-	}
 )
 
 type Task struct {
@@ -25,32 +16,7 @@ type Task struct {
 	Task string
 }
 
-func processChoice(choice int) {
-	switch choice {
-	case 1:
-		fmt.Println("You chose to create a new task")
-		var num int = 5
-		var task string
-		reader := bufio.NewReader(os.Stdin)
-		fmt.Print("Enter your task: ")
-		task, err := reader.ReadString('\n')
-		if err != nil {
-			log.Fatal(err)
-			return
-		}
-		task = strings.TrimSpace(task)
-		// remove newline from input aka give the string a haircut from leading and trailing white space
-		t := Task{Num: num, Task: task}
-		createTask(t)
-	case 2:
-		fmt.Println("You chose option 2")
-	case 3:
-		fmt.Println("You chose option 3")
-	}
-}
-
 func buildTable() {
-	// beginning of building table
 	table := simpletable.New()
 	table.Header = &simpletable.Header{
 		Cells: []*simpletable.Cell{
@@ -58,12 +24,12 @@ func buildTable() {
 			{Align: simpletable.AlignCenter, Text: "Task"},
 		},
 	}
-
-	// mapping sampleData below, will use a reliable database instead!
-	for _, row := range sampleData {
+	var taskData = getData()
+	for _, row := range taskData {
+		taskNum := int(row[0].(float64))
 		r := []*simpletable.Cell{
-			{Align: simpletable.AlignCenter, Text: fmt.Sprintf("%d", row[0].(int))}, // <- Task Number of type (int)
-			{Text: row[1].(string)}, // <- Task of type (string)
+			{Align: simpletable.AlignCenter, Text: fmt.Sprintf("%d", taskNum)},
+			{Text: row[1].(string)},
 		}
 		table.Body.Cells = append(table.Body.Cells, r)
 	}
@@ -77,60 +43,77 @@ func buildTable() {
 	table.SetStyle(simpletable.StyleUnicode)
 	fmt.Println(table.String())
 }
-
-func createTask(t Task) {
-	// Marshal retrieved data into bytes
-	tBytes, err := json.Marshal(t)
-	log.Print(string(tBytes))
-	if err != nil {
-		log.Println("Error marshalling JSON item", err)
-		log.Print(err)
-		return
-	}
-
-	// check if file already exists; if not, automatically create. otherwise, append because already exists
-	file, err := os.OpenFile("data.json", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer func(file *os.File) {
-		err := file.Close()
+func processChoice(choice int) {
+	switch choice {
+	case 1:
+		fmt.Println("You chose to create a new task")
+		var tasks = getData()
+		var count = len(tasks)
+		var num = count + 1
+		var task string
+		reader := bufio.NewReader(os.Stdin)
+		fmt.Print("Enter your task: ")
+		task, err := reader.ReadString('\n')
 		if err != nil {
 			log.Fatal(err)
+			return
 		}
-	}(file) // schedule a file close
+		task = strings.TrimSpace(task)
+		// remove newline from input aka give the string a haircut from leading and trailing white space
+		t := Task{num, task}
+		createTask(t)
 
-	input, err := file.Stat()
-	if err != nil {
-		log.Fatal(err)
+	case 2:
+		fmt.Println("You chose option 2")
+	case 3:
+		fmt.Println("You chose option 3")
 	}
-	// create new line if data already not empty
-	if input.Size() > 0 {
-		if _, err := file.WriteString(",\n"); err != nil {
-			log.Fatal(err)
-		}
+}
+
+func createTask(t Task) {
+	var tasks = getData()
+
+	// create new task from t Task
+	newTask := []interface{}{t.Num, t.Task}
+	// append t Task into tasks
+	tasks = append(tasks, newTask)
+
+	// marshal tasks into json
+	newData, err := json.Marshal(tasks)
+	if err != nil {
+		log.Fatal("Error marshalling new data:", err)
 	}
 
-	// simply add new task
-	_, err = file.Write(tBytes)
-	if err != nil {
-		log.Fatal(err)
+	if err := os.WriteFile("data.json", newData, 0644); err != nil {
+		log.Fatal("Error writing new data to file:", err)
 	}
+
 	log.Println("Data added")
 }
 
-/*
 func getData() [][]interface{} {
-	file, err := os.Open("data.json")
-	if err != nil { log.Fatal(err) }
+	// open file, checking if exists (read write, create permissions)
+	file, err := os.OpenFile("data.json", os.O_RDWR, 0644)
+	if err != nil {
+		log.Fatal(err)
+	}
 	defer file.Close()
 
-	data, err := ioutil.ReadAll(file)
-	if err!= nil { log.Fatal(err) }
+	// retrieve tasks in data.json
+	var tasks [][]interface{}
+	data, err := io.ReadAll(file)
+	if err != nil {
+		log.Fatal(err)
+	}
 
-
+	if len(data) > 0 {
+		// unmarshal if content is available (data -> tasks interface)
+		if err := json.Unmarshal(data, &tasks); err != nil {
+			log.Fatal("Error unmarshalling data:", err)
+		}
+	}
+	return tasks
 }
-*/
 
 func main() {
 	buildTable()
