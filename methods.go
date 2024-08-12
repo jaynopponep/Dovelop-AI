@@ -1,11 +1,13 @@
 package main
 
 import (
+	"bufio"
 	"encoding/json"
 	"fmt"
 	"io"
 	"log"
 	"os"
+	"strings"
 )
 
 func getData() [][]interface{} {
@@ -86,7 +88,35 @@ func deleteTask(num int) {
 	}
 }
 
-// Edit task
+func editTask(num int) {
+	var newTask string
+	reader := bufio.NewReader(os.Stdin)
+	fmt.Printf("Enter your new task for task %d: ", num)
+	newTask, err := reader.ReadString('\n')
+	if err != nil {
+		log.Fatal(err)
+		return
+	}
+	newTask = strings.TrimSpace(newTask)
+	tasks := getData()
+	for i, task := range tasks {
+		if int(task[0].(float64)) == num {
+			tasks[i][1] = newTask
+			break
+		}
+	}
+	updatedData, err := json.Marshal(tasks)
+	if err != nil {
+		log.Fatal("Error marshalling data:", err)
+	}
+	if err := os.WriteFile("data.json", updatedData, 0644); err != nil {
+		log.Fatal("Error writing new data to file:", err)
+	}
+	fmt.Printf("Edited task #%d\n", num)
+	buildTable()
+	promptUser()
+}
+
 func markDone(num int) {
 	tasks := getData()
 	for i, task := range tasks {

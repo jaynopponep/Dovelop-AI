@@ -97,8 +97,21 @@ func processChoice(choice int) {
 		}
 		buildTable()
 		promptUser()
+	case 4:
+		fmt.Println("You chose to edit a task")
+		fmt.Print("Enter the task number you want to edit: ")
+		var choice int
+		_, inputErr := fmt.Scanln(&choice)
+		if inputErr != nil {
+			fmt.Println("Invalid input, try again")
+			return
+		} else {
+			editTask(choice)
+		}
+	case 5:
+		break
 	}
-	// TODO: Case 4 and 5
+	// TODO: Case 4
 }
 
 func promptUser() {
