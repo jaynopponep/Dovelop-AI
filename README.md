@@ -63,4 +63,4 @@ $ dovelop
 - View your to do list
 - Prompt ChatGPT a suggestion on how to break down a task into three new and more concrete tasks
 ## Limitations (to be changed!)
-Current limited in being able to instantly add the ChatGPT response (3 new tasks) and to replace the prompted task with those new three, to be added very soon!
+Current limited in being able to instantly add the ChatGPT response (3 new tasks) and to replace the prompted task with those new three, to be added very soon! Will also add bash scripting for ease of installation
