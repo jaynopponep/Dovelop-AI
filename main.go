@@ -37,7 +37,7 @@ func buildTable() {
 	table.Footer = &simpletable.Footer{
 		Cells: []*simpletable.Cell{
 			{},
-			{Align: simpletable.AlignCenter, Text: "ChatGPT suggests breaking down these tasks into smaller ones! Accept? (Y/N)"},
+			{},
 			{},
 		},
 	}
