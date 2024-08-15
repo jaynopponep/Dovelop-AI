@@ -1,4 +1,4 @@
-# Dovelop - A way for developers to get things done!
+# Dovelop AI - A way for developers to get things done!
 A CLI application for developers to improve productivity by having an interactive AI-powered to do list conveniently at ones finger tips (with some typing).
 
 ## Demo
