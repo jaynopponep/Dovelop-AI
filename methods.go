@@ -2,8 +2,10 @@ package main
 
 import (
 	"bufio"
+	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/sashabaranov/go-openai"
 	"io"
 	"log"
 	"os"
@@ -132,4 +134,51 @@ func markDone(num int) {
 		log.Fatal("Error writing new data to file:", err)
 	}
 	fmt.Printf("Marked task #%d done\n", num)
+}
+
+func breakDownTask(num int) {
+	tasks := getData()
+	var taskName interface{}
+	for i, task := range tasks {
+		if int(task[0].(float64)) == num {
+			taskName = tasks[i][1]
+			break
+		}
+	}
+	var taskString = taskName.(string)
+	sendToGPT(taskString)
+}
+
+func sendToGPT(prompt string) {
+	var token = ""
+	client := openai.NewClient(token)
+	var content = "The following is a task that you will break down into an ARRAY of THREE tasks only. Do not respond with anything else except the ARRAY. Here's the task: " + prompt
+	resp, err := client.CreateChatCompletion(
+		context.Background(),
+		openai.ChatCompletionRequest{
+			Model: openai.GPT3Dot5Turbo,
+			Messages: []openai.ChatCompletionMessage{
+				{
+					Role:    openai.ChatMessageRoleUser,
+					Content: content,
+				},
+			},
+		},
+	)
+
+	if err != nil {
+		fmt.Printf("ChatCompletion error: %v\n", err)
+		return
+	}
+
+	var res = resp.Choices[0].Message.Content
+	var resTasks []string
+	err = json.Unmarshal([]byte(res), &resTasks)
+	if err != nil {
+		log.Fatalf("Error parsing response %v\n", err)
+	}
+	fmt.Println("Tasks:")
+	for i, task := range resTasks {
+		fmt.Printf("Task %d: %s\n", i+1, task)
+	}
 }

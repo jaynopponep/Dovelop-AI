@@ -109,14 +109,24 @@ func processChoice(choice int) {
 			editTask(choice)
 		}
 	case 5:
+		fmt.Println("You chose to breakdown a task into smaller ones!")
+		fmt.Print("Enter the task number you want to breakdown: ")
+		var choice int
+		_, inputErr := fmt.Scanln(&choice)
+		if inputErr != nil {
+			fmt.Println("Invalid input, try again")
+			return
+		} else {
+			breakDownTask(choice)
+		}
+	case 6:
 		break
 	}
-	// TODO: Case 4
 }
 
 func promptUser() {
 	// begin main menu process
-	fmt.Println("Choose an option" + "\n" + "1. Create a new task" + "\n" + "2. Mark a task done" + "\n" + "3. Delete a task" + "\n" + "4. Edit a task" + "\n" + "5. Exit")
+	fmt.Println("Choose an option" + "\n" + "1. Create a new task" + "\n" + "2. Mark a task done" + "\n" + "3. Delete a task" + "\n" + "4. Edit a task" + "\n" + "5. Breakdown a task with AI" + "\n" + "6. Exit")
 	var choice int
 	_, inputErr := fmt.Scanln(&choice)
 	if inputErr != nil {
