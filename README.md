@@ -1,5 +1,6 @@
 # Dovelop AI - A way for developers to get things done!
 A CLI application for developers to improve productivity by having an interactive AI-powered to do list conveniently at ones finger tips (with some typing).
+Dovelop AI also helps users understand how to take smaller steps to complete bigger things by using AI to break down big tasks into smaller ones!
 
 ## Demo
 ![dovelop-cli](https://github.com/user-attachments/assets/53efffa6-2695-4c8e-a23f-222463651200)
