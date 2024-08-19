@@ -147,12 +147,23 @@ func breakDownTask(num int) {
 	}
 	var taskString = taskName.(string)
 	sendToGPT(taskString)
+	newTasks, err := txtToArray("tasks.txt")
+	if err != nil { log.Fatalf("Error reading tasks from file: %v\n", err) }
+	reader := bufio.NewReader(os.Stdin)
+	fmt.Printf("ChatGPT has suggested your task becomes the three below. Accept? (Y/N)")
+	userChoice, err := reader.ReadString('\n')
+	if err != nil { log.Fatalf("Error reading user input: %v\n", err) }
+	if (strings.TrimSpace(userChoice) == "Y") {
+		replaceTasks(newTasks, num)	
+	} else {
+		os.Exit(0)
+	}
 }
 
 func sendToGPT(prompt string) {
 	var token = ""
 	client := openai.NewClient(token)
-	var content = "The following is a task that you will break down into an ARRAY of THREE tasks only. Do not respond with anything else except the ARRAY. Here's the task: " + prompt
+	var content = "The following is a task that you will break down into THREE tasks only. These three tasks you will store into a .txt file where each line is each task. Only write the tasks and do not numerically label or dot label them at all. Do not respond with anything else except the .txt. Here's the task: " + prompt
 	resp, err := client.CreateChatCompletion(
 		context.Background(),
 		openai.ChatCompletionRequest{
@@ -172,13 +183,50 @@ func sendToGPT(prompt string) {
 	}
 
 	var res = resp.Choices[0].Message.Content
-	var resTasks []string
-	err = json.Unmarshal([]byte(res), &resTasks)
-	if err != nil {
-		log.Fatalf("Error parsing response %v\n", err)
-	}
-	fmt.Println("Tasks:")
-	for i, task := range resTasks {
-		fmt.Printf("Task %d: %s\n", i+1, task)
-	}
+	
+	// writing txt
+	err = os.WriteFile("tasks.txt", []byte(res), 0644)
+	if err != nil { log.Fatalf("Failed writing task to file: %v\n", err) }
 }
+
+func txtToArray(filename string) ([]string, error) {
+	file, err := os.Open(filename)
+	if err != nil { return nil, err }
+	defer file.Close()
+	var tasks []string
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		tasks = append(tasks, strings.TrimSpace(scanner.Text()))
+	}
+
+	if err := scanner.Err(); err != nil { return nil, err }
+	return tasks, nil
+}
+
+func replaceTasks(newTasks []string, num int) {
+// void function that just replaces the task chosen with the new tasks
+	var tasks = getData()
+	var convertedTasks [][]interface{}
+	for i, task := range newTasks {
+		convertedTask := []interface{}{num+i, task, "Incomplete"}
+		convertedTasks = append(convertedTasks, convertedTask)
+	}
+	// will obtain task num, and use append logic that concatenates old task less than 'num' : new tasks : old task greater than 'num'
+
+	for i := range tasks[num:] {
+		currentIndex := num + i
+		adjustedTaskNumber := (tasks[currentIndex][0].(float64) - float64(num)) + float64(len(newTasks)) + 1
+		tasks[currentIndex][0] = int(adjustedTaskNumber)
+	}
+	tasks = append(tasks[:(num-1)], append(convertedTasks, tasks[num:]...)...)
+	updatedData, err := json.Marshal(tasks)
+	if err != nil {
+		log.Fatal("Error marshalling data:", err)
+	}
+	if err := os.WriteFile("data.json", updatedData, 0644); err != nil {
+		log.Fatal("Error writing new data to file:", err)
+	}
+	fmt.Printf("Replaced task #%d with three new smaller tasks! Good luck :)\n", num)
+	buildTable()
+}
+
